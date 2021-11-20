@@ -1,0 +1,13 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sam-IAM"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1fp0wkrdvokun"
+s3_prefix = "sam-IAM"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "Table=\"Users\" Region=\"ap-south-1\" AWSEnv=\"AWS\""
+image_repositories = []

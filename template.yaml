@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sam Application to manage IAM users 
+
+Globals:
+  Function:
+    Timeout: 60
+
+Parameters:
+  Table:
+    Type: String
+    Default: Activities
+  Region:
+    Type: String
+    Default: us-east-1
+  AWSEnv:
+    Type: String
+    Default: AWS
+
+Resources:
+  SyncUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/sync_users/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          REGION: !Ref Region
+          AWSENV: !Ref AWSEnv
+      Events:
+        CreateActivities:
+          Type: Api
+          Properties:
+            Path: /activities
+            Method: post
+      Policies:
+        - IAMFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable 
+
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/get_user/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          REGION: !Ref Region
+          AWSENV: !Ref AWSEnv
+      Events:
+        CreateActivities:
+          Type: Api
+          Properties:
+            Path: /activities/{UserName}
+            Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  ListUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/list_users/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          REGION: !Ref Region
+          AWSENV: !Ref AWSEnv
+      Events:
+        CreateActivities:
+          Type: Api
+          Properties:
+            Path: /activities/listuser
+            Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      
+  AddUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/add_user/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          REGION: !Ref Region
+          AWSENV: !Ref AWSEnv
+      Events:
+        CreateActivities:
+          Type: Api
+          Properties:
+            Path: /activities/adduser/{UserName}
+            Method: get
+      Policies:
+        - IAMFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  DeleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/delete_user/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          REGION: !Ref Region
+          AWSENV: !Ref AWSEnv
+      Events:
+        CreateActivities:
+          Type: Api
+          Properties:
+            Path: /activities/deleteuser/{UserName}
+            Method: get
+      Policies:
+        - IAMFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "UserName"
+          AttributeType: "S"
+
+      KeySchema:
+        -
+          AttributeName: "UserName"
+          KeyType: "HASH"
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "Users"
+
+Outputs:
+  SyncUsersApi:
+    Description: "API Gateway endpoint URL for Prod stage for Sync User Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/activities/"
+  SyncUsersFunction:
+    Description: "Sync Users Lambda Function ARN"
+    Value: !GetAtt SyncUsersFunction.Arn
+  SyncUsersFunctionIamRole:
+    Description: "Implicit IAM Role created for Create Activity function"
+    Value: !GetAtt SyncUsersFunctionRole.Arn
+  GetUserFunction:
+    Description: "Get Activity Lambda Function ARN"
+    Value: !GetAtt GetUserFunction.Arn
+  GetUserFunctionIamRole:
+    Description: "Implicit IAM Role created for Get Activity function"
+    Value: !GetAtt GetUserFunctionRole.Arn
+  ListUsersFunction:
+    Description: "List Activities Lambda Function ARN"
+    Value: !GetAtt ListUsersFunction.Arn
+  ListUsersFunctionIamRole:
+    Description: "Implicit IAM Role created for List Activities function"
+    Value: !GetAtt ListUsersFunctionRole.Arn
+  AddUserFunction:
+    Description: "Add User Lambda Function ARN"
+    Value: !GetAtt AddUserFunction.Arn
+  AddUserFunctionIamRole:
+    Description: "Implicit IAM Role created for Add User function"
+    Value: !GetAtt AddUserFunctionRole.Arn
+  DeleteUserFunction:
+    Description: "Delete Activity Lambda Function ARN"
+    Value: !GetAtt DeleteUserFunction.Arn
+  DeleteUserFunctionIamRole:
+    Description: "Implicit IAM Role created for Delete Activity function"
+    Value: !GetAtt DeleteUserFunctionRole.Arn
+  UsersTable:
+    Description: "DynamoDB Table"
+    Value: !Ref UsersTable
+  UsersTableArn:
+    Description: "DynamoDB Table ARN"
+    Value: !GetAtt UsersTable.Arn
